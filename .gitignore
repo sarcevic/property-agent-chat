@@ -1,0 +1,19 @@
+# Python-generated files
+__pycache__/
+.pytest_cache/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+#Local data
+stuff/
+.idea/
+
+# Virtual environments
+.venv
+
+# OS-specific system files
+.DS_Store
+Thumbs.db

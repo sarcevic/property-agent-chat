@@ -1,0 +1,25 @@
+[project]
+name = "property-agent"
+version = "0.1.0"
+description = "FastAPI app with Strands library library on localhost"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard]",
+    "jinja2",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "alembic",
+    "pgvector",
+    "python-dotenv",
+    "langchain-openai>=1.1.14",
+    "strands-agents[openai]>=1.36.0",
+    "strands-sdk>=10.0.2",
+    "ollama>=0.6.2",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.0",
+]

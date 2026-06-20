@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<title>Property Agent Chat</title>
+    <style>
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+			max-width: 1200px;
+			margin: 0 auto;
+			padding: 40px 20px;
+			background-color: #f6f8fa;
+			color: #24292f;
+		}
+		
+		h1 {
+			text-align: center;
+			color: #0f172a;
+			font-size: 2.5rem;
+			font-weight: 800;
+			letter-spacing: -0.05em;
+			margin-bottom: 30px;
+			background: linear-gradient(to right, #1e3a8a, #3b82f6);
+			-webkit-background-clip: text;
+			-webkit-text-fill-color: transparent;
+		}
+		
+		.input-container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			width: 100%;
+			max-width: 700px;
+			margin: 0 auto 40px auto;
+		}
+	
+		#userInput {
+			width: 100%; 
+			padding: 14px 20px;
+			font-size: 1rem;
+			border: 1px solid #cbd5e1;
+			border-radius: 25px;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+			box-sizing: border-box; 
+			transition: all 0.2s ease;
+		}
+		#userInput:focus {
+			outline: none;
+			border-color: #3b82f6;
+			box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+		}
+		
+		#sendButton {
+			margin-top: 15px;
+			padding: 12px 35px; 
+			font-size: 1rem;
+			font-weight: 600;
+			color: #ffffff;
+			background-color: #2563eb;
+			border: none;
+			border-radius: 20px;
+			cursor: pointer;
+			box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+			transition: all 0.2s ease;
+		}
+		#sendButton:hover {
+			background-color: #1d4ed8;
+			transform: translateY(-1px);
+			box-shadow: 0 6px 12px -2px rgba(37, 99, 235, 0.3);
+		}
+		#sendButton:active {
+			transform: translateY(1px);
+		}
+		
+		#sendButton:disabled {
+			background-color: #cbd5e1;
+			color: #94a3b8;
+			cursor: not-allowed;
+			transform: none;
+			box-shadow: none;
+		}
+		
+		.rainbow-border {
+			position: relative;
+			border: 2px solid transparent;
+			padding: 0px;
+			background-clip: padding-box;
+		}
+		
+		.rainbow-border::before {
+			content: '';
+			position: absolute;
+			top: -2px; bottom: -2px; left: -2px; right: -2px;
+			z-index: -1;
+			border-radius: 12px; /* Must match parent border-radius */
+			background: linear-gradient(45deg, #ff007f, #7f00ff, #00bfff, #00ff7f, #ff007f);
+			background-size: 400% 400%;
+			animation: rainbowMove 8s linear infinite;
+		}
+		
+		@keyframes rainbowMove {
+			0% { background-position: 0% 50%; }
+			50% { background-position: 100% 50%; }
+			100% { background-position: 0% 50%; }
+		}
+		
+		.chat-container {
+			display: flex;
+			flex-direction: column;
+			gap: 25px;
+			background: #ffffff;
+			border-radius: 12px;
+			padding: 20px;
+		}
+		
+		.area-row-card {
+			background: #ffffff;
+			border-radius: 12px;
+			padding: 20px;
+			box-sizing: border-box;
+		}
+		
+		.area-left-col h3 {
+			color: #1e293b;
+			font-size: 1.6rem; /* Distinctly larger */
+			margin-top: 0;
+			margin-bottom: 12px;
+		}
+
+		.area-right-col h4 {
+			color: #1e293b;
+			font-size: 1.25rem; /* Smaller sub-heading */
+			margin-top: 0;
+			margin-bottom: 15px;
+		}
+
+		.area-left-col p {
+			color: #475569;
+			line-height: 1.6;
+			margin: 0;
+		}
+
+		.area-right-col ul {
+			list-style-type: none;
+			padding-left: 0;
+			margin: 0;
+		}
+
+		.area-right-col li {
+			padding: 8px 0;
+			color: #334155;
+		}
+
+		@media (min-width: 1000px) {
+			.area-row-card {
+				display: flex;
+				gap: 30px;
+			}
+			
+			.area-left-col {
+				flex: 1;
+			}
+			
+			.area-right-col {
+				flex: 1;
+				border-left: 1px solid #f1f5f9;
+				padding-left: 30px;
+			}
+		}
+    </style>
+</head>
+<body>
+    <h1>Property Agent Chat</h1>
+	<div class="input-container">
+		<input type="text" id="userInput" placeholder="Describe area you want...">
+		<button id="sendButton" onclick="sendData()">Send</button>
+	</div>
+	
+	<div class="rainbow-border">
+		<div id="outputContainer" class="chat-container">Results will appear here...</div>
+	</div>
+    
+    <script>
+        let running = false;
+		let districtsDictionary = {};
+		let htmlBuffer = "";
+		
+		async function sendData() {
+			if (running) return;
+			running = true;
+			const sendButton = document.getElementById('sendButton');
+			sendButton.disabled = true;
+			
+			const input = document.getElementById('userInput').value;
+            const outputContainer = document.getElementById("outputContainer");
+            outputContainer.innerHTML = "<i>Processing...</i>";
+            districtsRawData = "";
+			htmlBuffer = "";
+			
+            const response = await fetch(`/ask?query=${input}`);
+			const reader = response.body.getReader();
+			const decoder = new TextDecoder();
+			
+			let streamBuffer = "";
+			outputContainer.innerHTML = "";
+			
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
+				
+				let sandbox = document.getElementById("streamSandbox");
+				if (!sandbox) {
+					sandbox = document.createElement("div");
+					sandbox.id = "streamSandbox";
+					outputContainer.appendChild(sandbox);
+				}
+				
+				const chunk = decoder.decode(value, { stream: true });
+				streamBuffer += chunk;
+				const lines = streamBuffer.split("\n");
+				streamBuffer = lines.pop();
+				for (const line of lines) {
+					if (line.trim() === "") continue;
+					try {
+						const parsed = JSON.parse(line);
+						if (parsed.data_type === "final") {
+							htmlBuffer += parsed.event_data;
+							
+							sandbox.innerHTML = htmlBuffer;
+							const consumedBytes = renderAreasAndDistricts();
+							if (consumedBytes > 0) {
+								htmlBuffer = htmlBuffer.substring(consumedBytes);
+								sandbox.innerHTML = htmlBuffer;
+							}
+						}
+						else {
+							if (parsed.event_data === "|"){
+								districtsDictionary = parseDistrictsData(districtsRawData);
+							}
+							else {
+								districtsRawData += parsed.event_data;
+							}
+						}
+					}
+					catch (e) {
+						console.error("Failed to parse JSON line:", line, e);
+					}
+				}
+			}
+			renderAreasAndDistricts(true);
+			
+			const sandbox = document.getElementById("streamSandbox");
+			if (sandbox) sandbox.remove();
+			
+			running = false;
+			sendButton.disabled = false;
+        }
+		
+		function parseDistrictsData(rawString) {
+			const dictionary = {};
+			
+			const rows = rawString.split(';');
+			
+			for (const row of rows) {
+				if (!row.trim()) continue;
+				
+				const [areaName, postcode, category, postTown, avgPrice] = row.split(',');
+				
+				if (!dictionary[areaName]) {
+					dictionary[areaName] = [];
+				}
+				
+				dictionary[areaName].push({
+					postcode: postcode,
+					category: category,
+					post_town: postTown,
+					avg_price: Number(avgPrice)
+				});
+			}
+			
+			return dictionary;
+		}
+		
+		function renderAreasAndDistricts(isStreamFinished = false) {
+			const outputContainer = document.getElementById("outputContainer");
+			const sandbox = document.getElementById("streamSandbox");
+			if (!sandbox) return 0;
+			
+			const h3Elements = sandbox.querySelectorAll("h3");
+			let processedLength = 0;
+			
+			for (const h3 of h3Elements) {
+				const areaName = h3.textContent.trim();
+				
+				if (districtsDictionary[areaName]) {
+					const nextEl = h3.nextElementSibling;
+					
+					if (nextEl && nextEl.tagName === "P") {
+						const elementAfterP = nextEl.nextElementSibling;
+						
+						const isAreaComplete = (elementAfterP && elementAfterP.tagName === "H3") || isStreamFinished;
+						
+						if (isAreaComplete) {
+							processedLength = htmlBuffer.indexOf(nextEl.outerHTML) + nextEl.outerHTML.length;
+							
+							const districtsData = districtsDictionary[areaName];
+							
+							const rowCard = document.createElement("div");
+							rowCard.className = "area-row-card";
+							
+							const leftCol = document.createElement("div");
+							leftCol.className = "area-left-col";
+							
+							const rightCol = document.createElement("div");
+							rightCol.className = "area-right-col";
+							
+							leftCol.appendChild(h3.cloneNode(true));
+							leftCol.appendChild(nextEl.cloneNode(true));
+							
+							rightCol.innerHTML = `<h4>Recommended districts in ${areaName}</h4>`;
+							const list = document.createElement("ul");
+							
+							categoryLabels= {
+								'F': 'Average Flat Price',
+								'H': 'Average House Price',
+								'T': 'Average Terraced House Price',
+								'S': 'Average Semi-Detached House Price',
+								'D': 'Average Detached House Price',
+								'G': 'Average Home Price'
+							};
+							
+							districtsData.forEach(district => {
+								const listItem = document.createElement("li");
+								const formattedPrice = district.avg_price.toLocaleString('en-GB', {
+									style: 'currency',
+									currency: 'GBP',
+									maximumFractionDigits: 0
+								});
+								const priceLabel = categoryLabels[district.category] || 'Average Price';
+								
+								listItem.innerHTML = `<strong>${district.postcode}</strong> (${district.post_town}) - ${priceLabel}: <strong>${formattedPrice}</strong>`;
+								list.appendChild(listItem);
+							});
+							
+							rightCol.appendChild(list);
+							rowCard.appendChild(leftCol);
+							rowCard.appendChild(rightCol);
+							
+							outputContainer.insertBefore(rowCard, sandbox);
+							
+							delete districtsDictionary[areaName];
+							
+							return processedLength;
+						}
+					}
+				}
+				
+				return 0;
+			}
+		}
+    </script>
+</body>
+</html>
