@@ -1,4 +1,6 @@
-# Property Agent Chat:
+![Service Index Page](homepage-preview.jpg)
+
+# Introduction:
 Property Agent Chat is an AI application that provides suggestion where to buy property in England or Wales (postcode areas and districts) based on user query.
 This application is an example how to use AWS Strands library in FastAPI project on localhost.
 Instead of using AWS Bedrock infrastructure, this application uses Ollama and Postgres on localhost.
@@ -36,3 +38,5 @@ Keep your paragraph High-Density."
 If you want to regenerate embeddings for areas, you can set them to null in database.
 On next start, application will run code to generate embeddings using mxbai-embed-large model.
 This might take several minutes.
+
+If you want to recalculate prices per district, using latest Land Registry data,  there is a Spring Batch application [property-data-ingestion-service](https://github.com/sarcevic/property-data-ingestion-service).
