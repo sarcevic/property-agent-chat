@@ -9,7 +9,7 @@ Instead of using AWS Bedrock infrastructure, this application uses Ollama and Po
 - Ollama
 - model mxbai-embed-large:335m
 - model gemma4:e4b
-- RAM: 10GB to load this model
+- VRAM/RAM: 8-10 GB to load this model
 - Postgres DB (and DB instance for this app)
 - Postgres vector enabled
 - uv (package and project manager)

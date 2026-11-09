@@ -2,7 +2,7 @@ import json
 import logging
 import time
 
-from sqlalchemy import select
+from sqlalchemy import select, func, case, cast, String, Float
 from pydantic import BaseModel, Field
 from strands import Agent
 from strands.agent.agent_result import AgentResult
@@ -43,6 +43,7 @@ RULES:
 
 class QueryAnalysis(BaseModel):
     area_description: str = Field(description="Description of area (lifestyle, climate, vibes, etc). If no relevant content found, set 'area_description' to empty string.")
+    cities: list[str] = Field(description="City names explicitly mentioned in the user query, e.g. ['London', 'Manchester']. Only real city names that appear in the query text. Empty list if none.")
     min_price: int = Field(description="The lower numerical bound. e.g., 100000. If no number is mentioned, set 'min_price' to 0.")
     max_price: int = Field(description="The upper numerical bound. e.g., 800000. If no number is mentioned, set 'max_price' to 0.")
     price_logic: Literal["STRICT", "AROUND", "NONE"] = Field(
@@ -151,12 +152,21 @@ class AreasMultiAgent(MultiAgentBase):
         try:
             embedding = invocation_state.get("embedding")
             structured_data = invocation_state.get("structured_data")
+            cities = structured_data.get("cities", [])
             user_query = (invocation_state.get("user_query")).lower()
             
             session = db_manager.get_session()
+            if cities:
+                tsquery = func.plainto_tsquery("english", " | ".join(c.lower() for c in cities))
+                text_source = (Area.name).cast(String)
+                keyword_rank = cast(case((func.to_tsvector("english", text_source).op('@@')(tsquery), 1.0), else_=0.0), Float)
+                score = 0.5 *(1 - keyword_rank) + 0.5 * (Area.embedding.cosine_distance(embedding))
+            else:
+                score = Area.embedding.cosine_distance(embedding)
+            
             statement = (
                 select(Area)
-                .order_by(Area.embedding.cosine_distance(embedding))
+                .order_by(score)
                 .limit(10)
             )
             areas = session.scalars(statement).all()
